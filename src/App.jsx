@@ -12,7 +12,7 @@ import LifeDemo from "./components/life/Demo";
 import LandingPage from "./components/shared/LandingPage";
 import LoadingScreen from "./components/shared/LoadingScreen";
 import HelpModal from "./components/shared/HelpModal";
-import { fetchMetadata, fetchMove } from "./utils/api";
+import { fetchAllMoves, fetchMetadata, fetchMove } from "./utils/api";
 import { playDiskThud } from "./utils/audio";
 import bg1Image from "./assets/bg-hanoi.png";
 import bg3Image from "./assets/bg-life.png";
@@ -52,6 +52,8 @@ function applyMove(towers, move) {
   return next;
 }
 
+const PRELOAD_MOVE_LIMIT = 10000;
+
 // ──────────────────────────────────────────────
 // Component
 // ──────────────────────────────────────────────
@@ -90,6 +92,7 @@ export default function App() {
     setStatus("ready");
     setWarning(null);
     setError(null);
+    moveCacheRef.current = { diskCount: null, moves: [] };
 
     // Pre-fetch total moves so the count shows immediately
     fetchMetadata(diskCount)
@@ -105,7 +108,35 @@ export default function App() {
   const currentMoveRef = useRef(0);
   const towersRef = useRef(buildInitialTowers(3));
   const speedRef = useRef(speed);
+  const moveCacheRef = useRef({ diskCount: null, moves: [] });
   useEffect(() => { speedRef.current = speed; }, [speed]);
+
+  async function preloadMoves(n, totalMoveCount) {
+    if (totalMoveCount > PRELOAD_MOVE_LIMIT) {
+      moveCacheRef.current = { diskCount: null, moves: [] };
+      return false;
+    }
+
+    const data = await fetchAllMoves(n);
+    moveCacheRef.current = {
+      diskCount: n,
+      moves: Array.isArray(data.moves) ? data.moves : [],
+    };
+    return true;
+  }
+
+  async function getMove(n, moveNum) {
+    const cache = moveCacheRef.current;
+    const cachedMove =
+      cache.diskCount === n && cache.moves.length >= moveNum
+        ? cache.moves[moveNum - 1]
+        : null;
+
+    if (cachedMove) return cachedMove;
+
+    const data = await fetchMove(n, moveNum);
+    return data.move;
+  }
 
   // ──────────────────────────────────────────────
   // ANIMATION LOOP
@@ -118,8 +149,7 @@ export default function App() {
 
       while (moveNum <= tm && !isPausedRef.current) {
         try {
-          const data = await fetchMove(n, moveNum);
-          const move = data.move;
+          const move = await getMove(n, moveNum);
           currentTowers = applyMove(currentTowers, move);
           towersRef.current = currentTowers;
           const moveText = `Move disk ${move.disk} from ${move.from} to ${move.to}`;
@@ -163,7 +193,19 @@ export default function App() {
     try {
       const meta = await fetchMetadata(diskCount);
       setTotalMoves(meta.totalMoves);
-      setWarning(meta.warning || (diskCount > 12 ? "Large disk count — animation may be slow." : null));
+      let preloadWarning = null;
+      try {
+        const didPreload = await preloadMoves(diskCount, meta.totalMoves);
+        if (!didPreload) {
+          preloadWarning =
+            "Large disk count — using on-demand moves, so deployment latency may limit top speed.";
+        }
+      } catch {
+        moveCacheRef.current = { diskCount: null, moves: [] };
+        preloadWarning =
+          "Could not preload moves — using on-demand moves, so deployment latency may limit top speed.";
+      }
+      setWarning(meta.warning || preloadWarning || (diskCount > 12 ? "Large disk count — animation may be slow." : null));
       const initTowers = buildInitialTowers(diskCount);
       towersRef.current = initTowers;
       setTowers(initTowers);
@@ -208,6 +250,7 @@ export default function App() {
     setStatus("ready");
     setError(null);
     setWarning(null);
+    moveCacheRef.current = { diskCount: null, moves: [] };
   }
 
   async function handleStepForward() {
@@ -222,6 +265,11 @@ export default function App() {
         knownTotalMoves = meta.totalMoves;
         setTotalMoves(meta.totalMoves);
         setWarning(meta.warning || null);
+        try {
+          await preloadMoves(diskCount, meta.totalMoves);
+        } catch {
+          moveCacheRef.current = { diskCount: null, moves: [] };
+        }
         const initTowers = buildInitialTowers(diskCount);
         towersRef.current = initTowers;
         setTowers(initTowers);
@@ -238,8 +286,7 @@ export default function App() {
     const nextMove = currentMoveRef.current + 1;
     if (nextMove > knownTotalMoves) return;
     try {
-      const data = await fetchMove(diskCount, nextMove);
-      const move = data.move;
+      const move = await getMove(diskCount, nextMove);
       const updatedTowers = applyMove(towersRef.current, move);
       towersRef.current = updatedTowers;
       currentMoveRef.current = nextMove;
