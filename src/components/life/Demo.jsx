@@ -1,6 +1,6 @@
 /**
  * LifeDemo.jsx — Game of Life simulator.
- * Game logic runs in Python; React handles UI and API calls.
+ * Presets load from the Python API; active simulation runs in the browser.
  */
 
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -8,9 +8,74 @@ import LifeBoard    from "./Board";
 import LifeControls from "./Controls";
 import LifeStats    from "./Stats";
 import LifeLog      from "./Log";
-import { fetchLifePreset, fetchLifeStep } from "../../utils/api";
+import { fetchLifePreset } from "../../utils/api";
 
 const MAX_LOG = 100;
+
+function countAliveCells(grid) {
+  return grid.reduce((sum, row) => sum + row.reduce((rowSum, cell) => rowSum + cell, 0), 0);
+}
+
+function getNextGeneration(grid, wrap = false) {
+  const rows = grid.length;
+  const cols = grid[0]?.length ?? 0;
+  if (rows === 0 || cols === 0) {
+    return { grid: [], aliveCells: 0, births: 0, deaths: 0, survivors: 0 };
+  }
+
+  const nextGrid = Array.from({ length: rows }, () => Array(cols).fill(0));
+  let births = 0;
+  let deaths = 0;
+  let survivors = 0;
+
+  function countNeighbors(row, col) {
+    let count = 0;
+
+    for (let dr = -1; dr <= 1; dr += 1) {
+      for (let dc = -1; dc <= 1; dc += 1) {
+        if (dr === 0 && dc === 0) continue;
+
+        let nr = row + dr;
+        let nc = col + dc;
+
+        if (wrap) {
+          nr = (nr + rows) % rows;
+          nc = (nc + cols) % cols;
+          count += grid[nr][nc];
+        } else if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+          count += grid[nr][nc];
+        }
+      }
+    }
+
+    return count;
+  }
+
+  for (let r = 0; r < rows; r += 1) {
+    for (let c = 0; c < cols; c += 1) {
+      const alive = grid[r][c] === 1;
+      const neighbors = countNeighbors(r, c);
+
+      if (alive && (neighbors === 2 || neighbors === 3)) {
+        nextGrid[r][c] = 1;
+        survivors += 1;
+      } else if (alive) {
+        deaths += 1;
+      } else if (neighbors === 3) {
+        nextGrid[r][c] = 1;
+        births += 1;
+      }
+    }
+  }
+
+  return {
+    grid: nextGrid,
+    aliveCells: births + survivors,
+    births,
+    deaths,
+    survivors,
+  };
+}
 
 export default function LifeDemo() {
   // ── Grid state ────────────────────────────────────────────────
@@ -77,15 +142,15 @@ export default function LifeDemo() {
 
   // ==============================
   // SIMULATION LOOP
-  // Repeatedly fetches the next generation from Python
-  // and updates the grid until paused or stopped.
+  // Calculates the next generation locally so playback speed is not capped
+  // by deployed API round-trip latency.
   // ==============================
   const runSimulation = useCallback(async () => {
     isRunningRef.current = true;
 
     while (isRunningRef.current && !isPausedRef.current) {
       try {
-        const data = await fetchLifeStep(gridRef.current, wrapRef.current);
+        const data = getNextGeneration(gridRef.current, wrapRef.current);
 
         gridRef.current        = data.grid;
         generationRef.current += 1;
@@ -142,7 +207,7 @@ export default function LifeDemo() {
     if (!gridRef.current || gridRef.current.length === 0) return;
     setError(null);
     try {
-      const data = await fetchLifeStep(gridRef.current, wrapRef.current);
+      const data = getNextGeneration(gridRef.current, wrapRef.current);
       gridRef.current        = data.grid;
       generationRef.current += 1;
       const gen = generationRef.current;
@@ -168,7 +233,7 @@ export default function LifeDemo() {
       const snap = customSnapshotRef.current.map((row) => [...row]);
       gridRef.current       = snap;
       generationRef.current = 0;
-      const alive = snap.reduce((s, row) => s + row.reduce((a, v) => a + v, 0), 0);
+      const alive = countAliveCells(snap);
       setGrid(snap);
       setGeneration(0);
       setStats({ alive, births: 0, deaths: 0, survivors: 0 });
@@ -246,7 +311,7 @@ export default function LifeDemo() {
     const newGrid = gridRef.current.map((row) => [...row]);
     newGrid[r][c] = newGrid[r][c] === 1 ? 0 : 1;
     gridRef.current = newGrid;
-    const alive = newGrid.reduce((sum, row) => sum + row.reduce((s, v) => s + v, 0), 0);
+    const alive = countAliveCells(newGrid);
     setGrid(newGrid.map((row) => [...row]));
     setStats((s) => ({ ...s, alive }));
     if (pattern !== "random") {
