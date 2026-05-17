@@ -1,0 +1,256 @@
+/* Custom classes — Tailwind handles the rest */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+/* Wood texture card background */
+.wood-texture {
+  background-color: #F7E6C8;
+  background-image:
+    repeating-linear-gradient(to right, transparent, transparent 10px, rgba(139, 69, 19, 0.025) 10px, rgba(139, 69, 19, 0.025) 20px),
+    repeating-linear-gradient(to bottom, transparent, transparent 15px, rgba(139, 69, 19, 0.015) 15px, rgba(139, 69, 19, 0.015) 30px);
+  box-shadow: inset 0 0 40px rgba(139, 69, 19, 0.08);
+  border: 2px solid #9A4F16;
+}
+
+/* Dark wood background for header/sidebar */
+.bg-wood-dark {
+  background-color: #3e2723;
+}
+
+/* Chunky pressed button effect */
+.chunky-btn {
+  box-shadow: 0 4px 0 0 #4a2511;
+  transition: all 0.1s ease;
+  border: 2px solid #4a2511;
+}
+.chunky-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 0 #4a2511;
+}
+.chunky-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Inset groove for slider track / progress track */
+.vial-groove {
+  box-shadow: inset 0 4px 6px -1px rgba(74, 37, 17, 0.5), inset 0 2px 4px -1px rgba(74, 37, 17, 0.3);
+  background-color: #E8D0B0;
+  border: 1px solid #9A4F16;
+}
+
+/* Liquid fill for progress bar */
+.vial-liquid {
+  background: linear-gradient(to right, #F4A261, #E9C46A);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4);
+}
+
+/* 3D disk style */
+.disk-3d {
+  box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+/* Webkit range input thumb */
+input[type="range"].vial-groove {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  cursor: pointer;
+  border-radius: 9999px;
+}
+input[type="range"].vial-groove::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #8e4e14;
+  box-shadow: 0 2px 6px rgba(142, 78, 20, 0.6);
+  border: 2px solid #4a2511;
+  cursor: pointer;
+}
+input[type="range"].vial-groove::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #8e4e14;
+  border: 2px solid #4a2511;
+  cursor: pointer;
+}
+
+/* Scrollbar for history list */
+.history-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.history-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.history-scroll::-webkit-scrollbar-thumb {
+  background: #8B4513;
+  border-radius: 2px;
+}
+
+/* Thin scrollbar for the main content area (Game of Life) */
+.main-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+.main-scroll::-webkit-scrollbar-track {
+  background: #E8D0B0;
+  border-radius: 5px;
+}
+.main-scroll::-webkit-scrollbar-thumb {
+  background: #8B4513;
+  border-radius: 5px;
+  border: 2px solid #E8D0B0;
+}
+.main-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: #8B4513 #E8D0B0;
+}
+
+/* ── Landing page animations ──────────────────────────────────────────── */
+
+/* Rings rotate clockwise / counter-clockwise */
+@keyframes lw-spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes lw-spin-ccw {
+  to { transform: rotate(-360deg); }
+}
+
+/* Floating bob for rings & formulas */
+@keyframes lw-float-bob {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-22px); }
+}
+
+/* Title glow breathe */
+@keyframes lw-title-breathe {
+  0%, 100% { filter: drop-shadow(0 4px 16px rgba(139,69,19,0.18)); }
+  50%      { filter: drop-shadow(0 6px 32px rgba(139,69,19,0.42)) drop-shadow(0 0 55px rgba(231,194,104,0.22)); }
+}
+
+/* Gradient shimmer sweep across title text */
+@keyframes lw-shimmer-title {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* Formula labels fade in/out */
+@keyframes lw-formula-appear {
+  0%, 100% { opacity: 0;    transform: translateY(10px) scale(0.92); }
+  18%, 82% { opacity: 0.42; transform: translateY(0)    scale(1);    }
+}
+
+/* Horizontal scan-line sweeps bottom → top */
+@keyframes lw-scan-line {
+  0%   { top: 102%; opacity: 0;   }
+  4%   { opacity: 1;              }
+  96%  { opacity: 0.7;            }
+  100% { top: -2px; opacity: 0;   }
+}
+
+/* Spotlight blob drifts slowly */
+@keyframes lw-spotlight-drift {
+  0%   { transform: translate(0px,   0px);   }
+  25%  { transform: translate(60px, -30px);  }
+  50%  { transform: translate(-40px, 20px);  }
+  75%  { transform: translate(30px,  40px);  }
+  100% { transform: translate(0px,   0px);   }
+}
+
+/* Background particles float upward */
+@keyframes lw-particle-float {
+  from { transform: translateY(0) rotate(0deg);       }
+  to   { transform: translateY(-110vh) rotate(540deg); }
+}
+
+/* Static disks breathe with a soft glow */
+@keyframes lw-disk-breathe {
+  from { filter: brightness(0.92); }
+  to   { filter: brightness(1.14); box-shadow: 0 0 18px rgba(244,162,97,0.55), 0 2px 8px rgba(0,0,0,0.18), inset 0 1px 3px rgba(255,255,255,0.35); }
+}
+
+/* Small disk travels A → C → A
+   480px canvas. A-center=80, C-center=400 → translateX=+320px
+   Small disk rest bottom=56px. Rod tops at bottom=106px.
+   Rise → translateY=-63px (visual bottom=119, clears rods).
+   Land on C empty → translateY=+32px (visual bottom=24, exactly on base). */
+@keyframes lw-hanoi-disk-move {
+  0%,  4%  { transform: translate(0,      0);     }
+  14%      { transform: translate(0,    -63px);   }
+  30%      { transform: translate(320px, -63px);  }
+  43%, 57% { transform: translate(320px,  32px);  }
+  68%      { transform: translate(320px, -63px);  }
+  84%      { transform: translate(0,    -63px);   }
+  96%,100% { transform: translate(0,      0);     }
+}
+
+/* Life cells pulse between dim and bright */
+@keyframes lw-cell-pulse {
+  from { opacity: 0.25; transform: scale(0.8); }
+  to   { opacity: 1;    transform: scale(1);   }
+}
+
+/* Card and title entrance */
+@keyframes lw-fade-up {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* Modal fade-out */
+@keyframes lw-fade-down {
+  from { opacity: 1; transform: translateY(0);    }
+  to   { opacity: 0; transform: translateY(32px); }
+}
+
+/* Game page fade-in */
+@keyframes lw-game-enter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Card pop-in on load */
+@keyframes lw-card-enter {
+  from { opacity: 0; transform: translateY(40px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);     }
+}
+
+/* Loading bar shimmer sweep */
+@keyframes ls-shimmer {
+  from { background-position: 200% center; }
+  to   { background-position: -200% center; }
+}
+
+/* Loading screen — mascot bob */
+@keyframes ls-char-bob {
+  0%, 100% { transform: translateY(0px);   }
+  50%       { transform: translateY(-14px); }
+}
+
+/* Loading screen — letter bounce wave */
+@keyframes ls-letter-bounce {
+  0%, 60%, 100% { transform: translateY(0px);  }
+  30%            { transform: translateY(-8px); }
+}
+
+/* Loading screen — diagonal stripe scroll */
+@keyframes ls-stripe-scroll {
+  from { background-position: 0 0;    }
+  to   { background-position: 28px 0; }
+}
+
+/* Loading screen — pulsing dots */
+@keyframes ls-dot-pulse {
+  0%, 100% { opacity: 0.2; transform: scale(0.75); }
+  50%       { opacity: 0.75; transform: scale(1.2); }
+}
